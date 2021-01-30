@@ -5,7 +5,7 @@ extern crate gtk;
 use gio::prelude::*;
 use gtk::prelude::*;
 
-use gtk::{ApplicationWindow, Builder, ComboBox};
+use gtk::{ApplicationWindow, Builder, ComboBox, ListStore};
 
 use std::env::args;
 
@@ -16,7 +16,14 @@ fn build_ui(application: &gtk::Application) {
     let window: ApplicationWindow = builder.get_object("main_window").expect("Couldn't get main_window");
     window.set_application(Some(application));
 
-    let _set_combo_box: ComboBox = builder.get_object("set_combo_box").unwrap();
+    let store = ListStore::new(&[glib::Type::String]);
+    store.set(&store.append(), &[0], &[&"hi".to_string()]);
+    store.set(&store.append(), &[0], &[&"hello".to_string()]);
+    store.set(&store.append(), &[0], &[&"goodbye".to_string()]);
+
+    let combo_box: ComboBox = builder.get_object("set_combo_box").unwrap();
+    combo_box.set_model(Some(&store));
+    combo_box.set_active(Some(0));
 
     window.show_all();
 }
