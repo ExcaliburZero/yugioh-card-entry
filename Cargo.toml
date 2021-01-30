@@ -8,4 +8,5 @@ edition = "2018"
 
 [dependencies]
 gio = "0.9"
+glib = "0.10"
 gtk = "0.9"
