@@ -13,7 +13,9 @@ fn build_ui(application: &gtk::Application) {
     let glade_src = include_str!("../resources/main.glade");
     let builder = Builder::from_string(glade_src);
 
-    let window: ApplicationWindow = builder.get_object("main_window").expect("Couldn't get main_window");
+    let window: ApplicationWindow = builder
+        .get_object("main_window")
+        .expect("Couldn't get main_window");
     window.set_application(Some(application));
 
     let store = ListStore::new(&[glib::Type::String]);
