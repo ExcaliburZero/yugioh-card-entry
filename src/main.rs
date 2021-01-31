@@ -1,11 +1,14 @@
 extern crate gio;
 extern crate glib;
 extern crate gtk;
+extern crate yugioh_card_entry;
 
 use gio::prelude::*;
 use gtk::prelude::*;
 
 use gtk::{ApplicationWindow, Builder, ComboBox, ListStore};
+
+use yugioh_card_entry::{APIConfig, YGOProDeckAPI, API};
 
 use std::env::args;
 
@@ -19,15 +22,20 @@ fn build_ui(application: &gtk::Application) {
     window.set_application(Some(application));
 
     let store = ListStore::new(&[glib::Type::String]);
-    store.set(&store.append(), &[0], &[&"hi".to_string()]);
-    store.set(&store.append(), &[0], &[&"hello".to_string()]);
-    store.set(&store.append(), &[0], &[&"goodbye".to_string()]);
 
     let combo_box: ComboBox = builder.get_object("set_combo_box").unwrap();
     combo_box.set_model(Some(&store));
     combo_box.set_active(Some(0));
 
     window.show_all();
+
+    // Get the card sets and add them to the combo box
+    let mut api = YGOProDeckAPI::new(APIConfig::new("https://db.ygoprodeck.com/api/v7"));
+
+    let cardsets = api.get_cardsets().unwrap();
+    for set in cardsets.iter() {
+        store.set(&store.append(), &[0], &[&set.name]);
+    }
 }
 
 fn main() {
