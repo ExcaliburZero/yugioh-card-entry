@@ -2,6 +2,8 @@ extern crate chrono;
 extern crate reqwest;
 extern crate serde;
 
+use std::collections::HashMap;
+
 use crate::data::*;
 
 pub trait API {
@@ -10,7 +12,17 @@ pub trait API {
 }
 
 pub struct CardInfoRequest {
-    pub name: String,
+    pub name: Option<String>,
+}
+
+impl CardInfoRequest {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.name.is_none() {
+            return Err("CardInfoRequest did not include a name".to_string());
+        }
+
+        Ok(())
+    }
 }
 
 pub struct YGOProDeckAPI {
@@ -34,14 +46,18 @@ impl API for YGOProDeckAPI {
     }
 
     fn get_cardinfo(&mut self, request: &CardInfoRequest) -> Result<Vec<Card>, String> {
+        request.validate()?;
+
         let request_url = format!("{}/cardinfo.php", self.config.api_path);
 
+        let mut query_params: HashMap<String, String> = HashMap::new();
+
+        if let Some(name) = &request.name {
+            query_params.insert("name".to_string(), name.to_string());
+        }
+
         let client = reqwest::blocking::Client::new();
-        match client
-            .get(&request_url)
-            .query(&[("name", &request.name)])
-            .send()
-        {
+        match client.get(&request_url).query(&query_params).send() {
             Ok(response) => Ok(response.json::<CardInfoResponse>().unwrap().data),
             Err(error) => Err(error.to_string()),
         }

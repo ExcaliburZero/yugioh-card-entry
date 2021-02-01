@@ -60,7 +60,9 @@ fn parse_card_prices() {
         ("ebay_price".to_string(), "2.99".to_string()),
         ("amazon_price".to_string(), "0.77".to_string()),
         ("coolstuffinc_price".to_string(), "0.99".to_string()),
-    ].into_iter().collect();
+    ]
+    .into_iter()
+    .collect();
 
     assert_eq!(expected, actual);
 }

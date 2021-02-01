@@ -40,7 +40,7 @@ fn build_ui(application: &gtk::Application) {
     // TODO: remove this, since it is for testing purposes
     let cards = api
         .get_cardinfo(&CardInfoRequest {
-            name: "Tornado Dragon".to_string(),
+            name: Some("Tornado Dragon".to_string()),
         })
         .unwrap();
 
