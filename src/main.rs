@@ -1,14 +1,17 @@
+extern crate gdk_pixbuf;
 extern crate gio;
 extern crate glib;
 extern crate gtk;
 extern crate yugioh_card_entry;
+
+use std::path::Path;
 
 use gio::prelude::*;
 use gtk::prelude::*;
 
 use gtk::{ApplicationWindow, Builder, ComboBox, IconView, ListStore};
 
-use yugioh_card_entry::{APIConfig, CardInfoRequest, YGOProDeckAPI, API};
+use yugioh_card_entry::{APIConfig, CardInfoRequest, ImageCache, YGOProDeckAPI, API};
 
 use std::env::args;
 
@@ -39,22 +42,40 @@ fn build_ui(application: &gtk::Application) {
     let cards = api
         .get_cardinfo(&CardInfoRequest {
             name: None,
-            cardset: Some(cardsets[0].set_name.clone()),
+            cardset: Some(cardsets[3].set_name.clone()),
         })
         .unwrap();
 
     println!("{:?}", cards);
 
     // Set the cards
-    let cards_store = ListStore::new(&[glib::Type::String]);
+    let cards_store = ListStore::new(&[glib::Type::String, gdk_pixbuf::Pixbuf::static_type()]);
     let card_icon_view: IconView = builder.get_object("card_item_view").unwrap();
     card_icon_view.set_model(Some(&cards_store));
 
+    let image_cache = ImageCache {
+        cache_path: ".".to_string(),
+    };
+
+    let width = 200;
+    let height = 200;
     for card in cards.iter() {
-        cards_store.set(&cards_store.append(), &[0], &[&card.name])
+        let image_path = image_cache
+            .get_image(&card.card_images[0].image_url)
+            .unwrap();
+
+        let image =
+            gdk_pixbuf::Pixbuf::from_file_at_scale(Path::new(&image_path), width, height, true)
+                .unwrap();
+
+        cards_store.set(&cards_store.append(), &[0, 1], &[&card.name, &image])
     }
 
+    println!("num cards: {}", cards.len());
+
     card_icon_view.set_text_column(0);
+    card_icon_view.set_pixbuf_column(1);
+    card_icon_view.set_item_width(100);
 
     window.show_all();
 }
