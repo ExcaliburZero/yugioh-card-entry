@@ -8,7 +8,7 @@ use gtk::prelude::*;
 
 use gtk::{ApplicationWindow, Builder, ComboBox, ListStore};
 
-use yugioh_card_entry::{APIConfig, YGOProDeckAPI, API};
+use yugioh_card_entry::{APIConfig, CardInfoRequest, YGOProDeckAPI, API};
 
 use std::env::args;
 
@@ -36,6 +36,15 @@ fn build_ui(application: &gtk::Application) {
     for set in cardsets.iter() {
         store.set(&store.append(), &[0], &[&set.set_name]);
     }
+
+    // TODO: remove this, since it is for testing purposes
+    let cards = api
+        .get_cardinfo(&CardInfoRequest {
+            name: "Tornado Dragon".to_string(),
+        })
+        .unwrap();
+
+    println!("{:?}", cards);
 }
 
 fn main() {
