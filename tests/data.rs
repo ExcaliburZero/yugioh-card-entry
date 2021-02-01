@@ -125,7 +125,7 @@ fn parse_card_info_response() {
       }"#;
 
     // Test that the parse does not fail
-    let actual: CardInfoResponse = serde_json::from_str(data).unwrap();
+    let _actual: CardInfoResponse = serde_json::from_str(data).unwrap();
 
     // TODO: assert eq
 }

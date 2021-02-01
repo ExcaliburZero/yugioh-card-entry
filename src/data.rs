@@ -4,8 +4,6 @@ extern crate serde;
 
 use std::collections::HashMap;
 
-use chrono::offset::Utc;
-use chrono::Date;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
