@@ -23,11 +23,7 @@ impl API for YGOProDeckAPI {
         let request_url = format!("{}/cardsets.php", self.config.api_path);
 
         match reqwest::blocking::get(&request_url) {
-            Ok(response) => {
-                let raw_cardsets = response.json::<Vec<RawCardSet>>().unwrap();
-
-                Ok(raw_cardsets.iter().map(|r| r.convert()).collect())
-            }
+            Ok(response) => Ok(response.json::<Vec<CardSet>>().unwrap()),
             Err(error) => Err(error.to_string()),
         }
     }

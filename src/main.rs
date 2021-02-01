@@ -34,7 +34,7 @@ fn build_ui(application: &gtk::Application) {
 
     let cardsets = api.get_cardsets().unwrap();
     for set in cardsets.iter() {
-        store.set(&store.append(), &[0], &[&set.name]);
+        store.set(&store.append(), &[0], &[&set.set_name]);
     }
 }
 
