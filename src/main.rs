@@ -6,7 +6,7 @@ extern crate yugioh_card_entry;
 use gio::prelude::*;
 use gtk::prelude::*;
 
-use gtk::{ApplicationWindow, Builder, ComboBox, ListStore};
+use gtk::{ApplicationWindow, Builder, ComboBox, IconView, ListStore};
 
 use yugioh_card_entry::{APIConfig, CardInfoRequest, YGOProDeckAPI, API};
 
@@ -27,8 +27,6 @@ fn build_ui(application: &gtk::Application) {
     combo_box.set_model(Some(&store));
     combo_box.set_active(Some(0));
 
-    window.show_all();
-
     // Get the card sets and add them to the combo box
     let mut api = YGOProDeckAPI::new(APIConfig::new("https://db.ygoprodeck.com/api/v7"));
 
@@ -46,6 +44,19 @@ fn build_ui(application: &gtk::Application) {
         .unwrap();
 
     println!("{:?}", cards);
+
+    // Set the cards
+    let cards_store = ListStore::new(&[glib::Type::String]);
+    let card_icon_view: IconView = builder.get_object("card_item_view").unwrap();
+    card_icon_view.set_model(Some(&cards_store));
+
+    for card in cards.iter() {
+        cards_store.set(&cards_store.append(), &[0], &[&card.name])
+    }
+
+    card_icon_view.set_text_column(0);
+
+    window.show_all();
 }
 
 fn main() {
