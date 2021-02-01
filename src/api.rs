@@ -13,12 +13,13 @@ pub trait API {
 
 pub struct CardInfoRequest {
     pub name: Option<String>,
+    pub cardset: Option<String>,
 }
 
 impl CardInfoRequest {
     pub fn validate(&self) -> Result<(), String> {
-        if self.name.is_none() {
-            return Err("CardInfoRequest did not include a name".to_string());
+        if self.name.is_none() && self.cardset.is_none() {
+            return Err("Invalid CardInfoRequest".to_string());
         }
 
         Ok(())
@@ -54,6 +55,9 @@ impl API for YGOProDeckAPI {
 
         if let Some(name) = &request.name {
             query_params.insert("name".to_string(), name.to_string());
+        }
+        if let Some(cardset) = &request.cardset {
+            query_params.insert("cardset".to_string(), cardset.to_string());
         }
 
         let client = reqwest::blocking::Client::new();
