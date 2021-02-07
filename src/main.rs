@@ -18,14 +18,17 @@ use yugioh_card_entry::{APIConfig, CardInfoRequest, ImageCache, YGOProDeckAPI, A
 use std::env::args;
 
 type LockedAPI = Arc<Mutex<YGOProDeckAPI>>;
+type LockedImageCache = Arc<Mutex<ImageCache>>;
 
 fn build_ui(application: &gtk::Application) {
+    // Setup image cache
     let mut cache_path = home::home_dir().unwrap();
     cache_path.push(".yugioh_card_entry");
     cache_path.push("images");
 
-    let image_cache = ImageCache::new(cache_path.to_str().unwrap());
+    let image_cache = Arc::new(Mutex::new(ImageCache::new(cache_path.to_str().unwrap())));
 
+    // Load the UI elements from a Glade file
     let glade_src = include_str!("../resources/main.glade");
     let builder = Builder::from_string(glade_src);
 
@@ -34,6 +37,7 @@ fn build_ui(application: &gtk::Application) {
         .expect("Couldn't get main_window");
     window.set_application(Some(application));
 
+    // Setup the card set combo box
     let store = ListStore::new(&[glib::Type::String]);
 
     let combo_box: ComboBox = builder.get_object("set_combo_box").unwrap();
@@ -64,7 +68,7 @@ fn build_ui(application: &gtk::Application) {
 
     // Have card viewer update when user chooses a card set
     combo_box.connect_changed(move |cb| {
-        card_set_combobox_handler(cb, api.clone(), &image_cache, &builder)
+        card_set_combobox_handler(cb, api.clone(), image_cache.clone(), &builder)
     });
 
     window.show_all();
@@ -89,7 +93,7 @@ fn combobox_get_active_value(combo_box: &ComboBox) -> String {
 fn card_set_combobox_handler(
     cb: &ComboBox,
     api: LockedAPI,
-    image_cache: &ImageCache,
+    image_cache: LockedImageCache,
     builder: &gtk::Builder,
 ) {
     let cardset = combobox_get_active_value(cb);
@@ -118,6 +122,8 @@ fn card_set_combobox_handler(
     let height = 200;
     for card in cards.iter() {
         let image_path = image_cache
+            .lock()
+            .unwrap()
             .get_image(&card.card_images[0].image_url)
             .unwrap();
 
