@@ -7,6 +7,9 @@ extern crate yugioh_card_entry;
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::thread;
+
+use futures::{channel::mpsc, StreamExt};
 
 use gio::prelude::*;
 use gtk::prelude::*;
@@ -68,7 +71,38 @@ fn build_ui(application: &gtk::Application) {
 
     // Have card viewer update when user chooses a card set
     combo_box.connect_changed(move |cb| {
-        card_set_combobox_handler(cb, api.clone(), image_cache.clone(), &builder)
+        let builder = builder.clone();
+
+        let (sender, mut receiver) = mpsc::channel(1000);
+        card_set_combobox_handler(cb, sender, api.clone(), image_cache.clone(), &builder);
+
+        let main_context = glib::MainContext::default();
+        let future = async move {
+            while let Some(item) = receiver.next().await {
+                let card_icon_view: IconView = builder.get_object("card_item_view").unwrap();
+                let cards_store = card_icon_view
+                    .get_model()
+                    .unwrap()
+                    .downcast::<ListStore>()
+                    .unwrap();
+
+                let (name, image_path) = item;
+
+                let width = 200;
+                let height = 200;
+                println!("Attempting to open file: {}", image_path);
+                let image = gdk_pixbuf::Pixbuf::from_file_at_scale(
+                    Path::new(&image_path),
+                    width,
+                    height,
+                    true,
+                )
+                .unwrap();
+
+                cards_store.set(&cards_store.append(), &[0, 1], &[&name, &image]);
+            }
+        };
+        main_context.spawn_local(future);
     });
 
     window.show_all();
@@ -92,6 +126,7 @@ fn combobox_get_active_value(combo_box: &ComboBox) -> String {
 
 fn card_set_combobox_handler(
     cb: &ComboBox,
+    mut sender: mpsc::Sender<(String, String)>,
     api: LockedAPI,
     image_cache: LockedImageCache,
     builder: &gtk::Builder,
@@ -118,25 +153,21 @@ fn card_set_combobox_handler(
 
     cards_store.clear();
 
-    let width = 200;
-    let height = 200;
-    for card in cards.iter() {
-        let image_path = image_cache
-            .lock()
-            .unwrap()
-            .get_image(&card.card_images[0].image_url)
-            .unwrap();
-
-        println!("Got image: {}", image_path);
-
-        let image =
-            gdk_pixbuf::Pixbuf::from_file_at_scale(Path::new(&image_path), width, height, true)
+    thread::spawn(move || {
+        for card in cards.iter() {
+            let image_path = image_cache
+                .lock()
+                .unwrap()
+                .get_image(&card.card_images[0].image_url)
                 .unwrap();
 
-        cards_store.set(&cards_store.append(), &[0, 1], &[&card.name, &image])
-    }
+            println!("Got image: {}", image_path);
 
-    println!("num cards: {}", cards.len());
+            sender.try_send((card.name.clone(), image_path)).unwrap();
+        }
+
+        println!("num cards: {}", cards.len());
+    });
 }
 
 fn main() {
