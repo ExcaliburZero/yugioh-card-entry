@@ -45,6 +45,14 @@ fn build_ui(application: &gtk::Application) {
         store.set(&store.append(), &[0], &[&set.set_name]);
     }
 
+    // Set the visual settings for the card viewer
+    let card_icon_view: IconView = builder.get_object("card_item_view").unwrap();
+
+    card_icon_view.set_text_column(0);
+    card_icon_view.set_pixbuf_column(1);
+    card_icon_view.set_item_width(100);
+
+    // Have card viewer update when user chooses a card set
     combo_box.connect_changed(move |cb| {
         let mut api = YGOProDeckAPI::new(APIConfig::new("https://db.ygoprodeck.com/api/v7"));
 
@@ -80,10 +88,6 @@ fn build_ui(application: &gtk::Application) {
         }
 
         println!("num cards: {}", cards.len());
-
-        card_icon_view.set_text_column(0);
-        card_icon_view.set_pixbuf_column(1);
-        card_icon_view.set_item_width(100);
     });
 
     window.show_all();
