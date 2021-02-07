@@ -51,7 +51,11 @@ fn build_ui(application: &gtk::Application) {
         let model = cb.get_model().unwrap().downcast::<ListStore>().unwrap();
 
         let index = cb.get_active().unwrap();
-        let cardset: String = model.get_value(&model.iter_nth_child(None, index as i32).unwrap(), 0).get().unwrap().unwrap();
+        let cardset: String = model
+            .get_value(&model.iter_nth_child(None, index as i32).unwrap(), 0)
+            .get()
+            .unwrap()
+            .unwrap();
 
         let cards = api
             .get_cardinfo(&CardInfoRequest {
