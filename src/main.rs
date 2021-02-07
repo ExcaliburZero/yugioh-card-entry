@@ -48,15 +48,7 @@ fn build_ui(application: &gtk::Application) {
     combo_box.connect_changed(move |cb| {
         let mut api = YGOProDeckAPI::new(APIConfig::new("https://db.ygoprodeck.com/api/v7"));
 
-        let model = cb.get_model().unwrap().downcast::<ListStore>().unwrap();
-
-        let index = cb.get_active().unwrap();
-        let cardset: String = model
-            .get_value(&model.iter_nth_child(None, index as i32).unwrap(), 0)
-            .get()
-            .unwrap()
-            .unwrap();
-
+        let cardset = combobox_get_active_value(cb);
         let cards = api
             .get_cardinfo(&CardInfoRequest {
                 name: None,
@@ -95,6 +87,22 @@ fn build_ui(application: &gtk::Application) {
     });
 
     window.show_all();
+}
+
+fn combobox_get_active_value(combo_box: &ComboBox) -> String {
+    let model = combo_box
+        .get_model()
+        .unwrap()
+        .downcast::<ListStore>()
+        .unwrap();
+
+    let index = combo_box.get_active().unwrap();
+
+    model
+        .get_value(&model.iter_nth_child(None, index as i32).unwrap(), 0)
+        .get()
+        .unwrap()
+        .unwrap()
 }
 
 fn main() {
