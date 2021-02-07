@@ -10,6 +10,14 @@ pub struct ImageCache {
 }
 
 impl ImageCache {
+    pub fn new(cache_path: &str) -> ImageCache {
+        fs::create_dir_all(cache_path).unwrap();
+
+        ImageCache {
+            cache_path: cache_path.to_string(),
+        }
+    }
+
     fn get_image_path(&self, image_filename: &str) -> String {
         format!("{}/{}", self.cache_path, image_filename)
     }

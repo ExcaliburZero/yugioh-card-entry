@@ -2,6 +2,7 @@ extern crate gdk_pixbuf;
 extern crate gio;
 extern crate glib;
 extern crate gtk;
+extern crate home;
 extern crate yugioh_card_entry;
 
 use std::path::Path;
@@ -16,6 +17,12 @@ use yugioh_card_entry::{APIConfig, CardInfoRequest, ImageCache, YGOProDeckAPI, A
 use std::env::args;
 
 fn build_ui(application: &gtk::Application) {
+    let mut cache_path = home::home_dir().unwrap();
+    cache_path.push(".yugioh_card_entry");
+    cache_path.push("images");
+
+    let image_cache = ImageCache::new(cache_path.to_str().unwrap());
+
     let glade_src = include_str!("../resources/main.glade");
     let builder = Builder::from_string(glade_src);
 
@@ -38,9 +45,6 @@ fn build_ui(application: &gtk::Application) {
         store.set(&store.append(), &[0], &[&set.set_name]);
     }
 
-    // TODO: remove this, since it is for testing purposes
-
-
     combo_box.connect_changed(move |cb| {
         let mut api = YGOProDeckAPI::new(APIConfig::new("https://db.ygoprodeck.com/api/v7"));
 
@@ -62,10 +66,6 @@ fn build_ui(application: &gtk::Application) {
         let cards_store = ListStore::new(&[glib::Type::String, gdk_pixbuf::Pixbuf::static_type()]);
         let card_icon_view: IconView = builder.get_object("card_item_view").unwrap();
         card_icon_view.set_model(Some(&cards_store));
-
-        let image_cache = ImageCache {
-            cache_path: ".".to_string(),
-        };
 
         let width = 200;
         let height = 200;
