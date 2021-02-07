@@ -52,6 +52,11 @@ fn build_ui(application: &gtk::Application) {
     card_icon_view.set_pixbuf_column(1);
     card_icon_view.set_item_width(100);
 
+    // Create a data model for the card viewer
+    let cards_store = ListStore::new(&[glib::Type::String, gdk_pixbuf::Pixbuf::static_type()]);
+    let card_icon_view: IconView = builder.get_object("card_item_view").unwrap();
+    card_icon_view.set_model(Some(&cards_store));
+
     // Have card viewer update when user chooses a card set
     combo_box.connect_changed(move |cb| {
         let mut api = YGOProDeckAPI::new(APIConfig::new("https://db.ygoprodeck.com/api/v7"));
@@ -67,9 +72,14 @@ fn build_ui(application: &gtk::Application) {
         println!("{:?}", cards);
 
         // Set the cards
-        let cards_store = ListStore::new(&[glib::Type::String, gdk_pixbuf::Pixbuf::static_type()]);
         let card_icon_view: IconView = builder.get_object("card_item_view").unwrap();
-        card_icon_view.set_model(Some(&cards_store));
+        let cards_store = card_icon_view
+            .get_model()
+            .unwrap()
+            .downcast::<ListStore>()
+            .unwrap();
+
+        cards_store.clear();
 
         let width = 200;
         let height = 200;
