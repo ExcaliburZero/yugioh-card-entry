@@ -69,12 +69,30 @@ fn build_ui(application: &gtk::Application) {
     let card_icon_view: IconView = builder.get_object("card_item_view").unwrap();
     card_icon_view.set_model(Some(&cards_store));
 
+    let card_query_id = Arc::new(Mutex::new(0));
+
     // Have card viewer update when user chooses a card set
     combo_box.connect_changed(move |cb| {
+        // Increment the query id, so any ongoing queries are stopped
+        let current_query_id: u32;
+        {
+            let mut query_id = card_query_id.lock().unwrap();
+            *query_id += 1;
+            current_query_id = *query_id;
+        }
+
         let builder = builder.clone();
 
         let (sender, mut receiver) = mpsc::channel(1000);
-        card_set_combobox_handler(cb, sender, api.clone(), image_cache.clone(), &builder);
+        card_set_combobox_handler(
+            cb,
+            sender,
+            api.clone(),
+            image_cache.clone(),
+            &builder,
+            current_query_id,
+            card_query_id.clone(),
+        );
 
         let main_context = glib::MainContext::default();
         let future = async move {
@@ -130,6 +148,8 @@ fn card_set_combobox_handler(
     api: LockedAPI,
     image_cache: LockedImageCache,
     builder: &gtk::Builder,
+    assigned_query_id: u32,
+    card_query_id: Arc<Mutex<u32>>,
 ) {
     let cardset = combobox_get_active_value(cb);
     let cards = api
@@ -162,6 +182,10 @@ fn card_set_combobox_handler(
                 .unwrap();
 
             println!("Got image: {}", image_path);
+
+            if *card_query_id.lock().unwrap() != assigned_query_id {
+                break;
+            }
 
             sender.try_send((card.name.clone(), image_path)).unwrap();
         }
