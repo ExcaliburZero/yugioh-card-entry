@@ -183,6 +183,9 @@ fn card_set_combobox_handler(
 
             println!("Got image: {}", image_path);
 
+            // If another card query was made while we were loading the cards for this query, then
+            // we should end this query early so that the results of the two queries are not
+            // intermingled
             if *card_query_id.lock().unwrap() != assigned_query_id {
                 break;
             }
