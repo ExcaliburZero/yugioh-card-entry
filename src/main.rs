@@ -39,43 +39,56 @@ fn build_ui(application: &gtk::Application) {
     }
 
     // TODO: remove this, since it is for testing purposes
-    let cards = api
-        .get_cardinfo(&CardInfoRequest {
-            name: None,
-            cardset: Some(cardsets[3].set_name.clone()),
-        })
-        .unwrap();
 
-    println!("{:?}", cards);
 
-    // Set the cards
-    let cards_store = ListStore::new(&[glib::Type::String, gdk_pixbuf::Pixbuf::static_type()]);
-    let card_icon_view: IconView = builder.get_object("card_item_view").unwrap();
-    card_icon_view.set_model(Some(&cards_store));
+    combo_box.connect_changed(move |cb| {
+        let mut api = YGOProDeckAPI::new(APIConfig::new("https://db.ygoprodeck.com/api/v7"));
 
-    let image_cache = ImageCache {
-        cache_path: ".".to_string(),
-    };
+        let model = cb.get_model().unwrap().downcast::<ListStore>().unwrap();
 
-    let width = 200;
-    let height = 200;
-    for card in cards.iter() {
-        let image_path = image_cache
-            .get_image(&card.card_images[0].image_url)
+        let index = cb.get_active().unwrap();
+        let cardset: String = model.get_value(&model.iter_nth_child(None, index as i32).unwrap(), 0).get().unwrap().unwrap();
+
+        let cards = api
+            .get_cardinfo(&CardInfoRequest {
+                name: None,
+                cardset: Some(cardset),
+            })
             .unwrap();
 
-        let image =
-            gdk_pixbuf::Pixbuf::from_file_at_scale(Path::new(&image_path), width, height, true)
+        println!("{:?}", cards);
+
+        // Set the cards
+        let cards_store = ListStore::new(&[glib::Type::String, gdk_pixbuf::Pixbuf::static_type()]);
+        let card_icon_view: IconView = builder.get_object("card_item_view").unwrap();
+        card_icon_view.set_model(Some(&cards_store));
+
+        let image_cache = ImageCache {
+            cache_path: ".".to_string(),
+        };
+
+        let width = 200;
+        let height = 200;
+        for card in cards.iter() {
+            let image_path = image_cache
+                .get_image(&card.card_images[0].image_url)
                 .unwrap();
 
-        cards_store.set(&cards_store.append(), &[0, 1], &[&card.name, &image])
-    }
+            println!("Got image: {}", image_path);
 
-    println!("num cards: {}", cards.len());
+            let image =
+                gdk_pixbuf::Pixbuf::from_file_at_scale(Path::new(&image_path), width, height, true)
+                    .unwrap();
 
-    card_icon_view.set_text_column(0);
-    card_icon_view.set_pixbuf_column(1);
-    card_icon_view.set_item_width(100);
+            cards_store.set(&cards_store.append(), &[0, 1], &[&card.name, &image])
+        }
+
+        println!("num cards: {}", cards.len());
+
+        card_icon_view.set_text_column(0);
+        card_icon_view.set_pixbuf_column(1);
+        card_icon_view.set_item_width(100);
+    });
 
     window.show_all();
 }
